@@ -21,7 +21,7 @@ jobs:
 
       - name: Start local server
         run: |
-          npx http-server -p 8080 & 
+          npx http-server -p 8080 &
           echo "Starting server on port 8080..."
           sleep 5
 
@@ -34,14 +34,18 @@ jobs:
             --output-path ./lighthouse-report \
             --chrome-flags="--headless --no-sandbox --disable-gpu" \
             --only-categories=performance \
-            --quiet \
             | tee lighthouse-console.log
+
+      - name: Print summary
+        run: |
+          echo "Extracting performance score..."
+          cat lighthouse-report.report.json | grep -E '"performance":[0-9]' || true
 
       - name: Upload reports and logs
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-performance-results
           path: |
-            lighthouse-report.json
-            lighthouse-report.html
+            lighthouse-report.report.json
+            lighthouse-report.report.html
             lighthouse-console.log
