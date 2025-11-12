@@ -1,95 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - Demo App</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #2b5876, #4e4376);
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #fff;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Nightmare</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    .login-box {
-      background: rgba(0, 0, 0, 0.3);
-      padding: 2em;
-      border-radius: 10px;
-      width: 300px;
-      text-align: center;
-      box-shadow: 0 0 15px rgba(0,0,0,0.3);
-    }
+    <style>
+        /* ❌ PROBLEM 2: Unused CSS */
+        /* We are adding thousands of lines of CSS that we don't actually use */
+        body { font-family: sans-serif; }
+        .unused-class-1 { color: red; transform: scale(2); }
+        .unused-class-2 { background: blue; transition: all 2s; }
+        .hero { min-height: 100vh; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    </style>
 
-    input {
-      width: 80%;
-      padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 5px;
-      outline: none;
-    }
-
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      background-color: #00c9a7;
-      color: #fff;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:disabled {
-      background: #777;
-      cursor: not-allowed;
-    }
-
-    .error {
-      color: #ff6b6b;
-      margin-top: 10px;
-    }
-  </style>
+    <script>
+        console.log("🛑 Starting heavy blocking task...");
+        const start = Date.now();
+        // This loop freezes the browser for 2 seconds! 
+        // This causes high "Total Blocking Time" (TBT)
+        while (Date.now() - start < 2000) {
+            // Burn CPU cycles
+        }
+        console.log("✅ Finished heavy task.");
+    </script>
 </head>
 <body>
-  <div class="login-box">
-    <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username" /><br />
-    <input type="password" id="password" placeholder="Password" /><br />
-    <button id="loginBtn">Login</button>
-    <div id="status" class="error"></div>
-  </div>
 
-  <script>
-    const loginBtn = document.getElementById("loginBtn");
-    const status = document.getElementById("status");
+    <div class="hero">
+        <h1>Welcome to the Slow Site</h1>
+        <p>This page is intentionally built to fail Lighthouse tests.</p>
 
-    loginBtn.addEventListener("click", () => {
-      const user = document.getElementById("username").value.trim();
-      const pass = document.getElementById("password").value.trim();
+        <img src="https://via.placeholder.com/4000" alt="Heavy Image" />
+        
+        <button class="btn btn-primary" onclick="alert('Clicked!')">Click Me (If you can)</button>
+    </div>
 
-      if (!user || !pass) {
-        status.textContent = "Please fill in both fields.";
-        return;
-      }
+    <script>
+        // This script waits 1 second, then inserts a banner
+        // This pushes all content down, causing a "Cumulative Layout Shift"
+        setTimeout(() => {
+            const banner = document.createElement('div');
+            banner.style.height = '200px';
+            banner.style.background = 'orange';
+            banner.style.width = '100%';
+            banner.innerHTML = '<h2 style="padding:50px; text-align:center;">SURPRISE BANNER! (Layout Shift)</h2>';
+            document.body.prepend(banner);
+        }, 1000);
+    </script>
 
-      loginBtn.disabled = true;
-      status.textContent = "Logging in...";
-      
-      // simulate server delay for PoC (e.g., 2 seconds)
-      setTimeout(() => {
-        if (user === "admin" && pass === "admin") {
-          localStorage.setItem("isLoggedIn", "true");
-          window.location.href = "dashboard.html";
-        } else {
-          status.textContent = "Invalid credentials.";
-          loginBtn.disabled = false;
-        }
-      }, 2000);
-    });
-  </script>
 </body>
 </html>
+apps-fileview.texmex_20251030.00_p0
+index.html
+Displaying index.html.
