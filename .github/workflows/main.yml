@@ -17,35 +17,53 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install -g http-server lighthouse
+          npm install -g http-server lighthouse csv-writer
 
       - name: Start local server
         run: |
+          mkdir -p logs reports
           npx http-server -p 8080 &
-          echo "Starting server on port 8080..."
+          echo "🌐 Starting local server on port 8080..."
           sleep 5
 
-      - name: Run Lighthouse performance audit
+      - name: Run Lighthouse Audit
         run: |
-          echo "Running Lighthouse test..."
+          echo "🚀 Running Lighthouse Performance Test..."
           lighthouse http://127.0.0.1:8080/index.html \
             --output json \
             --output html \
-            --output-path ./lighthouse-report \
+            --output-path ./reports/lighthouse-report \
             --chrome-flags="--headless --no-sandbox --disable-gpu" \
             --only-categories=performance \
-            | tee lighthouse-console.log
+            | tee ./logs/lighthouse-console.log
 
-      - name: Print summary
+      - name: Convert JSON report to CSV
         run: |
-          echo "Extracting performance score..."
-          cat lighthouse-report.report.json | grep -E '"performance":[0-9]' || true
+          echo "📊 Converting Lighthouse JSON to CSV..."
+          node -e "
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('./reports/lighthouse-report.report.json', 'utf8'));
+          const score = data.categories.performance.score * 100;
+          const audits = Object.values(data.audits).map(a => ({
+            id: a.id,
+            title: a.title,
+            score: a.score,
+            numericValue: a.numericValue,
+            displayValue: a.displayValue
+          }));
+          const rows = ['id,title,score,numericValue,displayValue'];
+          audits.forEach(a=>{
+            rows.push([a.id, JSON.stringify(a.title), a.score, a.numericValue, JSON.stringify(a.displayValue)].join(','));
+          });
+          rows.push(['performance_score', '', score, '', '']);
+          fs.writeFileSync('./reports/lighthouse-report.csv', rows.join('\\n'));
+          console.log('✅ CSV report created: ./reports/lighthouse-report.csv');
+          "
 
-      - name: Upload reports and logs
+      - name: Upload Reports and Logs
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-performance-results
           path: |
-            lighthouse-report.report.json
-            lighthouse-report.report.html
-            lighthouse-console.log
+            logs/
+            reports/
