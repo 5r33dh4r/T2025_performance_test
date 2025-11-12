@@ -1,0 +1,48 @@
+name: Run Login App and Capture Logs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-login:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install http-server puppeteer
+
+      - name: Run test in headless browser
+        run: |
+          npx http-server -p 8080 & 
+          sleep 2
+          node -e "
+          const puppeteer = require('puppeteer');
+          const fs = require('fs');
+          (async()=>{
+            const browser = await puppeteer.launch({args:['--no-sandbox']});
+            const page = await browser.newPage();
+            const logs=[];
+            page.on('console', msg=>logs.push(msg.text()));
+            await page.goto('http://127.0.0.1:8080/index.html',{waitUntil:'networkidle2'});
+            await page.type('#username','admin');
+            await page.type('#password','admin');
+            await page.click('#loginBtn');
+            await page.waitForTimeout(3000);
+            fs.writeFileSync('console_output.txt', logs.join('\\n'));
+            await browser.close();
+          })();
+          "
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-logs
+          path: console_output.txt
