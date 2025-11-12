@@ -35,7 +35,7 @@ jobs:
             await page.type('#username','admin');
             await page.type('#password','admin');
             await page.click('#loginBtn');
-            await page.waitForTimeout(3000);
+            await new Promise(r => setTimeout(r, 3000));  // ✅ fixed delay
             fs.writeFileSync('console_output.txt', logs.join('\\n'));
             await browser.close();
           })();
