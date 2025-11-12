@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🌐 Lighthouse Custom Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 30px; background: #f6f7fb; color: #333; }
+  .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  h1 { color: #4b8bf4; margin-bottom: 10px; }
+  .score { font-size: 48px; font-weight: bold; color: #4caf50; }
+  .metric { margin-top: 10px; font-size: 18px; }
+  canvas { margin-top: 30px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+  th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+  th { background: #e9efff; }
+  .btn-group { margin-top: 25px; }
+  button { margin-right: 10px; background: #4b8bf4; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
+  button:hover { background: #3a73d6; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Custom Lighthouse Report</h1>
+    <p><strong>Page:</strong> {{url}}</p>
+    <p class="score">Performance Score: {{score}} / 100</p>
+    <div class="metric">First Contentful Paint: {{fcp}} ms</div>
+    <div class="metric">Speed Index: {{speedIndex}} ms</div>
+    <div class="metric">Largest Contentful Paint: {{lcp}} ms</div>
+    <div class="metric">Cumulative Layout Shift: {{cls}}</div>
+    <div class="metric">Total Blocking Time: {{tbt}} ms</div>
+
+    <canvas id="metricsChart" width="400" height="200"></canvas>
+
+    <table id="metricsTable">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>First Contentful Paint</td><td>{{fcp}} ms</td></tr>
+        <tr><td>Speed Index</td><td>{{speedIndex}} ms</td></tr>
+        <tr><td>Largest Contentful Paint</td><td>{{lcp}} ms</td></tr>
+        <tr><td>Cumulative Layout Shift</td><td>{{cls}}</td></tr>
+        <tr><td>Total Blocking Time
+
