@@ -2,36 +2,45 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>🌐 Lighthouse Custom Report</title>
+<title>🌐 Custom Lighthouse Report</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 30px; background: #f6f7fb; color: #333; }
-  .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
   h1 { color: #4b8bf4; margin-bottom: 10px; }
   .score { font-size: 48px; font-weight: bold; color: #4caf50; }
   .metric { margin-top: 10px; font-size: 18px; }
-  canvas { margin-top: 30px; }
+  canvas { margin-top: 30px; max-width: 100%; }
   table { width: 100%; border-collapse: collapse; margin-top: 30px; }
   th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
   th { background: #e9efff; }
   .btn-group { margin-top: 25px; }
   button { margin-right: 10px; background: #4b8bf4; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
   button:hover { background: #3a73d6; }
+  .charts { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+  .chart-box { flex: 1 1 400px; background: #fff; border-radius: 8px; padding: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
 </style>
 </head>
 <body>
   <div class="card">
     <h1>Custom Lighthouse Report</h1>
-    <p><strong>Page:</strong> {{url}}</p>
-    <p class="score">Performance Score: {{score}} / 100</p>
-    <div class="metric">First Contentful Paint: {{fcp}} ms</div>
-    <div class="metric">Speed Index: {{speedIndex}} ms</div>
-    <div class="metric">Largest Contentful Paint: {{lcp}} ms</div>
-    <div class="metric">Cumulative Layout Shift: {{cls}}</div>
-    <div class="metric">Total Blocking Time: {{tbt}} ms</div>
+    <p><strong>Page:</strong> http://127.0.0.1:8080/index.html</p>
+    <p class="score">Performance Score: 49 / 100</p>
+    <div class="metric">First Contentful Paint: 1617 ms</div>
+    <div class="metric">Speed Index: 7671 ms</div>
+    <div class="metric">Largest Contentful Paint: 1617 ms</div>
+    <div class="metric">Cumulative Layout Shift: 0.243</div>
+    <div class="metric">Total Blocking Time: 6972 ms</div>
 
-    <canvas id="metricsChart" width="400" height="200"></canvas>
+    <div class="charts">
+      <div class="chart-box">
+        <canvas id="metricsChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
 
     <table id="metricsTable">
       <thead>
@@ -41,9 +50,106 @@
         </tr>
       </thead>
       <tbody>
-        <tr><td>First Contentful Paint</td><td>{{fcp}} ms</td></tr>
-        <tr><td>Speed Index</td><td>{{speedIndex}} ms</td></tr>
-        <tr><td>Largest Contentful Paint</td><td>{{lcp}} ms</td></tr>
-        <tr><td>Cumulative Layout Shift</td><td>{{cls}}</td></tr>
-        <tr><td>Total Blocking Time
+        <tr><td>First Contentful Paint</td><td>1617 ms</td></tr>
+        <tr><td>Speed Index</td><td>7671 ms</td></tr>
+        <tr><td>Largest Contentful Paint</td><td>1617 ms</td></tr>
+        <tr><td>Cumulative Layout Shift</td><td>0.243</td></tr>
+        <tr><td>Total Blocking Time</td><td>6972 ms</td></tr>
+      </tbody>
+    </table>
 
+    <div class="btn-group">
+      <button onclick="downloadJSON()">📄 Download JSON</button>
+      <button onclick="downloadCSV()">📊 Download CSV</button>
+      <button onclick="downloadPDF()">🧾 Download PDF</button>
+    </div>
+  </div>
+
+<script>
+  const reportData = {
+    url: "http://127.0.0.1:8080/index.html",
+    score: 49,
+    fcp: 1617,
+    speedIndex: 7671,
+    lcp: 1617,
+    cls: 0.243,
+    tbt: 6972
+  };
+
+  // --- BAR CHART ---
+  new Chart(document.getElementById('metricsChart'), {
+    type: 'bar',
+    data: {
+      labels: ['FCP', 'Speed Index', 'LCP', 'CLS', 'TBT'],
+      datasets: [{
+        label: 'Metric (ms)',
+        data: [reportData.fcp, reportData.speedIndex, reportData.lcp, reportData.cls * 1000, reportData.tbt],
+        backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#9c27b0', '#f44336']
+      }]
+    },
+    options: {
+      plugins: { title: { display: true, text: 'Performance Metrics' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // --- PIE CHART ---
+  new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['FCP', 'Speed Index', 'LCP', 'CLS', 'TBT'],
+      datasets: [{
+        data: [reportData.fcp, reportData.speedIndex, reportData.lcp, reportData.cls * 1000, reportData.tbt],
+        backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#9c27b0', '#f44336']
+      }]
+    },
+    options: {
+      plugins: { title: { display: true, text: 'Metric Distribution' }, legend: { position: 'bottom' } }
+    }
+  });
+
+  // --- DOWNLOAD JSON ---
+  function downloadJSON() {
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'lighthouse-report.json';
+    a.click();
+  }
+
+  // --- DOWNLOAD CSV ---
+  function downloadCSV() {
+    const rows = [
+      ['Metric', 'Value'],
+      ['First Contentful Paint', reportData.fcp + ' ms'],
+      ['Speed Index', reportData.speedIndex + ' ms'],
+      ['Largest Contentful Paint', reportData.lcp + ' ms'],
+      ['Cumulative Layout Shift', reportData.cls],
+      ['Total Blocking Time', reportData.tbt + ' ms'],
+      ['Performance Score', reportData.score + '/100']
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'lighthouse-report.csv';
+    a.click();
+  }
+
+  // --- DOWNLOAD PDF ---
+  async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Lighthouse Custom Report", 10, 20);
+    doc.setFontSize(12);
+    let y = 40;
+    for (const [key, value] of Object.entries(reportData)) {
+      doc.text(`${key.toUpperCase()}: ${value}`, 10, y);
+      y += 10;
+    }
+    doc.save('lighthouse-report.pdf');
+  }
+</script>
+</body>
+</html>
