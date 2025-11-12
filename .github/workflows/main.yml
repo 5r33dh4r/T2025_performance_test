@@ -1,10 +1,10 @@
-name: Lighthouse Performance Test
+name: Lighthouse Performance Report
 
 on:
   workflow_dispatch:
 
 jobs:
-  lighthouse-audit:
+  lighthouse:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -15,55 +15,44 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Install Lighthouse and serve
         run: |
-          npm install -g http-server lighthouse csv-writer
+          npm install -g lighthouse http-server
+          mkdir -p reports logs
 
-      - name: Start local server
+      - name: Serve the site and run Lighthouse
         run: |
-          mkdir -p logs reports
           npx http-server -p 8080 &
-          echo "🌐 Starting local server on port 8080..."
-          sleep 5
-
-      - name: Run Lighthouse Audit
-        run: |
-          echo "🚀 Running Lighthouse Performance Test..."
+          sleep 3
           lighthouse http://127.0.0.1:8080/index.html \
-            --output json \
-            --output html \
-            --output-path ./reports/lighthouse-report \
-            --chrome-flags="--headless --no-sandbox --disable-gpu" \
-            --only-categories=performance \
-            | tee ./logs/lighthouse-console.log
+            --quiet --chrome-flags="--headless" \
+            --output json --output csv --output html \
+            --output-path=reports/lighthouse-report \
+            --only-categories=performance
 
-      - name: Convert JSON report to CSV
+      - name: Extract metrics and fill template
         run: |
-          echo "📊 Converting Lighthouse JSON to CSV..."
           node -e "
-          const fs = require('fs');
-          const data = JSON.parse(fs.readFileSync('./reports/lighthouse-report.report.json', 'utf8'));
-          const score = data.categories.performance.score * 100;
-          const audits = Object.values(data.audits).map(a => ({
-            id: a.id,
-            title: a.title,
-            score: a.score,
-            numericValue: a.numericValue,
-            displayValue: a.displayValue
-          }));
-          const rows = ['id,title,score,numericValue,displayValue'];
-          audits.forEach(a=>{
-            rows.push([a.id, JSON.stringify(a.title), a.score, a.numericValue, JSON.stringify(a.displayValue)].join(','));
-          });
-          rows.push(['performance_score', '', score, '', '']);
-          fs.writeFileSync('./reports/lighthouse-report.csv', rows.join('\\n'));
-          console.log('✅ CSV report created: ./reports/lighthouse-report.csv');
+          const fs=require('fs');
+          const data=JSON.parse(fs.readFileSync('reports/lighthouse-report.report.json'));
+          const metrics={
+            url:data.requestedUrl,
+            score:(data.categories.performance.score*100).toFixed(0),
+            fcp:data.audits['first-contentful-paint'].numericValue.toFixed(0),
+            speedIndex:data.audits['speed-index'].numericValue.toFixed(0),
+            lcp:data.audits['largest-contentful-paint'].numericValue.toFixed(0),
+            cls:data.audits['cumulative-layout-shift'].numericValue.toFixed(3),
+            tbt:data.audits['total-blocking-time'].numericValue.toFixed(0)
+          };
+          let template=fs.readFileSync('custom-template.html','utf8');
+          for(const [k,v] of Object.entries(metrics))
+            template=template.replaceAll('{{'+k+'}}',v);
+          fs.writeFileSync('reports/custom-report.html',template);
+          console.log('✅ Custom report generated: reports/custom-report.html');
           "
 
-      - name: Upload Reports and Logs
+      - name: Upload reports
         uses: actions/upload-artifact@v4
         with:
-          name: lighthouse-performance-results
-          path: |
-            logs/
-            reports/
+          name: lighthouse-reports
+          path: reports/
